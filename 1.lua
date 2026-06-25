@@ -1,4 +1,4 @@
---MODEED BY ADITYA_ORG
+--MODEED BY NxTLvLKaran
 
 
 -- Per-match guard: allow re-init when the player controller changes (new match)
@@ -29,7 +29,7 @@ if not _G.Mod_Aimbot_Enabled then _G.Mod_Aimbot_Enabled = false end
 if not _G.Mod_ESP_Enabled then _G.Mod_ESP_Enabled = false end
 if not _G.Mod_Wallhack_Enabled then _G.Mod_Wallhack_Enabled = false end
 if _G.Mod_FPS165_Enabled == nil then _G.Mod_FPS165_Enabled = true end
-if _G.Mod_NoGrass_Enabled == nil then _G.Mod_NoGrass_Enabled = true end
+if _G.Mod_NoGrass_Enabled == nil then _G.Mod_NoGrass_Enabled = false end
 if _G.Mod_iPadView_Enabled == nil then _G.Mod_iPadView_Enabled = false end
 
 -- Slider values for fine-tuning
@@ -41,14 +41,9 @@ if _G.Mod_Chams_YellowEnabled == nil then _G.Mod_Chams_YellowEnabled = false end
 if _G.Mod_Chams_GreenRGB == nil then _G.Mod_Chams_GreenRGB = {R=0, G=255, B=0, A=255} end
 if _G.Mod_Chams_YellowRGB == nil then _G.Mod_Chams_YellowRGB = {R=255, G=255, B=0, A=255} end
 
--- Scene config defaults
+-- Scene config defaults (only grass remains)
 if _G.ESPConfig == nil then _G.ESPConfig = {} end
-if _G.ESPConfig.BlackSky == nil then _G.ESPConfig.BlackSky = false end
-if _G.ESPConfig.RemoveFog == nil then _G.ESPConfig.RemoveFog = false end
 if _G.ESPConfig.RemoveGrass == nil then _G.ESPConfig.RemoveGrass = false end
-if _G.ESPConfig.RemoveTree == nil then _G.ESPConfig.RemoveTree = false end
-if _G.ESPConfig.RemoveWater == nil then _G.ESPConfig.RemoveWater = false end
-if _G.ESPConfig.ForceChinese == nil then _G.ESPConfig.ForceChinese = false end
 
 local require = require
 local import  = import
@@ -1115,7 +1110,7 @@ local function finalStart()
 end
 finalStart()
 
--- ==================== SCENE FUNCTIONS (global, used by menu) ====================
+-- ==================== SCENE FUNCTIONS (only grass remains) ====================
 local function ExecuteConsoleCommand(cmd, value)
     local instance = slua_GameFrontendHUD and slua_GameFrontendHUD:GetGameInstance()
     if instance then
@@ -1129,40 +1124,9 @@ local function ExecuteConsoleCommand(cmd, value)
     end
 end
 
-function SetBlackSky(enabled)
-    ExecuteConsoleCommand("r.CylinderMaxDrawHeight", enabled and "9999" or "0")
-end
-
-function SetFogRemoval(enabled)
-    ExecuteConsoleCommand("r.Fog", enabled and "0" or "1")
-    ExecuteConsoleCommand("r.VolumetricFog", enabled and "0" or "1")
-end
-
 function SetGrassRemoval(enabled)
     ExecuteConsoleCommand("grass.DensityScale", enabled and "0" or "1")
     ExecuteConsoleCommand("foliage.DensityScale", enabled and "0" or "1")
-end
-
-function SetTreeRemoval(enabled)
-    ExecuteConsoleCommand("foliage.TreeDensityScale", enabled and "0" or "1")
-end
-
-function SetWaterRemoval(enabled)
-    ExecuteConsoleCommand("r.Water", enabled and "0" or "1")
-end
-
-function SetForceChinese(enabled)
-    if enabled then
-        pcall(function()
-            local gi = slua_GameFrontendHUD and slua_GameFrontendHUD:GetGameInstance()
-            if gi and gi.SetCurrentCulture then gi:SetCurrentCulture("zh-CN") end
-        end)
-    else
-        pcall(function()
-            local gi = slua_GameFrontendHUD and slua_GameFrontendHUD:GetGameInstance()
-            if gi and gi.SetCurrentCulture then gi:SetCurrentCulture("en") end
-        end)
-    end
 end
 
 -- ==================== WALLHACK ====================
@@ -1617,25 +1581,38 @@ local function ApplyHardAimbot()
         if not isValid(entity) then return end
 
         local strengthMul = (_G.Mod_AimbotStrength or 50) / 100
-
+        
         entity.GameDeviationFactor = 0.2
-        entity.RecoilKick = 0.02
-        entity.RecoilKickADS = 0.1
-        entity.AnimationKick = 0.02
+        entity.WeaponAimInTime = 20
+        entity.SwitchFromIdleToBackpackTime = 0.15
+        entity.SwitchFromBackpackToIdleTime = 0.15
+        entity.ShotGunHorizontalSpread = 0.0
+        entity.ShotGunVerticalSpread = 0.0
+        entity.RecoilKickADS = 0.020
         entity.AccessoriesVRecoilFactor = 0.30
         entity.AccessoriesHRecoilFactor = 0.35
-        entity.ExtraHitPerformScale = 20
+        entity.ExtraHitPerformScale = 10
+        if entity.RecoilInfo then
+            entity.RecoilInfo.VerticalRecoilMin = 0.2
+            entity.RecoilInfo.VerticalRecoilMax = 0.5
+            entity.RecoilInfo.RecoilSpeedVertical = 0.2
+            entity.RecoilInfo.RecoilSpeedHorizontal = 0.15
+            entity.RecoilInfo.VerticalRecoveryMax = 0.2
+        end
+        entity.RecoilModifierStand = 0.1
+        entity.RecoilModifierCrouch = 0.1
+        entity.RecoilModifierProne = 0.1
         if entity.AutoAimingConfig then
             for _, range in ipairs({"OuterRange", "InnerRange"}) do
                 local cfg = entity.AutoAimingConfig[range]
                 if cfg then
-                    cfg.Speed = 4.3
-                    cfg.RangeRate = 3.9
-                    cfg.SpeedRate = 3.8
-                    cfg.RangeRateSight = 3.9
-                    cfg.SpeedRateSight = 3.8
-                    cfg.CrouchRate = 3.5
-                    cfg.ProneRate = 2.5
+                    cfg.Speed = 8
+                    cfg.RangeRate = 5
+                    cfg.SpeedRate = 5
+                    cfg.RangeRateSight = 4
+                    cfg.SpeedRateSight = 4
+                    cfg.CrouchRate = 4
+                    cfg.ProneRate = 4
                     cfg.DyingRate = 0
                     cfg.adsorbMaxRange = 200
                     cfg.adsorbMinRange = 20
@@ -1646,6 +1623,23 @@ local function ApplyHardAimbot()
             end
             entity.AutoAimingConfig = entity.AutoAimingConfig
         end
+
+        pcall(function()
+            local aimComp = char.BP_AutoAimingComponent_C
+                         or char.BP_AutoAimingComponent
+                         or char.AutoAimingComponent
+
+            if isValid(aimComp) and aimComp.Bones then
+                pcall(function() aimComp.Bones[0] = "neck_01" end)
+                pcall(function() aimComp.Bones[1] = "neck_01" end)
+                pcall(function() aimComp.Bones[2] = "neck_01" end)
+
+                pcall(function() aimComp.Bones:Set(0, "neck_01") end)
+                pcall(function() aimComp.Bones:Set(1, "neck_01") end)
+                pcall(function() aimComp.Bones:Set(2, "neck_01") end)
+            end
+        end)
+
     end)
 end
 
@@ -1753,7 +1747,7 @@ pcall(function()
         end)
     end
 
-    -- ==================== MERGED MENU (All toggles in one place) ====================
+    -- ==================== MERGED MENU (All toggles in one place, only grass scene toggle kept) ====================
     _G.InitModMenuTab = function()
         local LocUtil = _G.LocUtil
         if not LocUtil and package.loaded["client.common.LocUtil"] then
@@ -1859,31 +1853,8 @@ pcall(function()
                     end
                 },
 
-                -- === SCENE OPTIONS (added here) ===
+                -- === SCENE OPTIONS (only grass scene toggle remains) ===
                 { UI = AliasMap.Title, Text = "--- SCENE OPTIONS ---" },
-
-                {
-                    Key = "ESP_BlackSky",
-                    UI = AliasMap.TitleSwitcher,
-                    Text = "BlackSky (Dark Sky)",
-                    GetFunc = function() return _G.ESPConfig.BlackSky end,
-                    SetFunc = function(ctrl, value)
-                        _G.ESPConfig.BlackSky = value
-                        SetBlackSky(value)
-                        return true
-                    end
-                },
-                {
-                    Key = "ESP_RemoveFog",
-                    UI = AliasMap.TitleSwitcher,
-                    Text = "No Fog",
-                    GetFunc = function() return _G.ESPConfig.RemoveFog end,
-                    SetFunc = function(ctrl, value)
-                        _G.ESPConfig.RemoveFog = value
-                        SetFogRemoval(value)
-                        return true
-                    end
-                },
                 {
                     Key = "ESP_RemoveGrass",
                     UI = AliasMap.TitleSwitcher,
@@ -1892,39 +1863,6 @@ pcall(function()
                     SetFunc = function(ctrl, value)
                         _G.ESPConfig.RemoveGrass = value
                         SetGrassRemoval(value)
-                        return true
-                    end
-                },
-                {
-                    Key = "ESP_RemoveTree",
-                    UI = AliasMap.TitleSwitcher,
-                    Text = "No Tree",
-                    GetFunc = function() return _G.ESPConfig.RemoveTree end,
-                    SetFunc = function(ctrl, value)
-                        _G.ESPConfig.RemoveTree = value
-                        SetTreeRemoval(value)
-                        return true
-                    end
-                },
-                {
-                    Key = "ESP_RemoveWater",
-                    UI = AliasMap.TitleSwitcher,
-                    Text = "No Water",
-                    GetFunc = function() return _G.ESPConfig.RemoveWater end,
-                    SetFunc = function(ctrl, value)
-                        _G.ESPConfig.RemoveWater = value
-                        SetWaterRemoval(value)
-                        return true
-                    end
-                },
-                {
-                    Key = "ESP_ForceChinese",
-                    UI = AliasMap.TitleSwitcher,
-                    Text = "Force Chinese",
-                    GetFunc = function() return _G.ESPConfig.ForceChinese end,
-                    SetFunc = function(ctrl, value)
-                        _G.ESPConfig.ForceChinese = value
-                        SetForceChinese(value)
                         return true
                     end
                 }
@@ -2206,4 +2144,3 @@ pcall(function()
         bypassInit()
     end
 end)
-
